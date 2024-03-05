@@ -49,27 +49,23 @@ class ZoomButton extends React.Component {
         zoomToExtent: PropTypes.func,
         zoomToPoint: PropTypes.func
     };
-    static defaultProps = {
-        enableZoomByBoxSelection: false
-    };
+    constructor(props) {
+        super(props);
+        this.task = props.direction > 0 ? "ZoomIn" : "ZoomOut";
+    }
     state = {
-        disabled: false,
-        task: null,
-        zoomBox: null
+        disabled: false
     };
     componentDidUpdate(prevProps) {
-        if (prevProps !== this.props) {
+        if (prevProps.currentZoom !== this.props.currentZoom || prevProps.maxZoom !== this.props.maxZoom) {
             if (this.props.direction > 0) {
-                this.setState({disabled: this.props.currentZoom >= this.props.maxZoom, task: "ZoomIn"});
+                this.setState({disabled: this.props.currentZoom >= this.props.maxZoom});
             } else if (this.props.direction < 0) {
-                this.setState({disabled: this.props.currentZoom <= 0, task: "ZoomOut"});
+                this.setState({disabled: this.props.currentZoom <= 0});
             }
         }
-        if (this.props.currentTask !== null && this.props.currentTask === this.state.task && this.state.disabled) {
-            this.props.setCurrentTask(null);
-        }
-        if (this.props.currentTask === this.state.task && this.props.click !== prevProps.click) {
-            const point = this.props.click.coordinate;
+        if (this.props.currentTask === this.task && this.props.click !== prevProps.click) {
+            const point = this.props.click?.coordinate;
             if (point) {
                 const zoom = Math.max(0, this.props.currentZoom + this.props.direction);
                 this.props.zoomToPoint(point, zoom, this.mapCrs);
@@ -91,13 +87,12 @@ class ZoomButton extends React.Component {
         const tooltip = this.props.direction > 0 ? LocaleUtils.tr("tooltip.zoomin") : LocaleUtils.tr("tooltip.zoomout");
         const classes = classnames({
             "map-button": true,
-            "map-button-active": this.props.enableZoomByBoxSelection && this.props.currentTask === this.state.task,
+            "map-button-active": this.props.enableZoomByBoxSelection && this.props.currentTask === this.task,
             "map-button-disabled": this.state.disabled
         });
         return [(
             <button className={classes}
-                disabled={this.state.disabled}
-                key={this.state.task + "Button"}
+                key={this.task + "Button"}
                 onClick={this.buttonClicked}
                 style={style}
                 title={tooltip}
@@ -105,7 +100,7 @@ class ZoomButton extends React.Component {
                 <Icon icon={this.props.direction > 0 ? "plus" : "minus"} title={tooltip}/>
             </button>
         ), (
-            this.props.currentTask === this.state.task ? (
+            this.props.currentTask === this.task ? (
                 <MapSelection
                     active cursor={this.props.direction > 0 ? "zoom-in" : "zoom-out"}
                     geomType="DragBox"
@@ -117,23 +112,20 @@ class ZoomButton extends React.Component {
     }
     buttonClicked = () => {
         if (this.props.enableZoomByBoxSelection) {
-            const task = this.props.direction > 0 ? "ZoomIn" : "ZoomOut";
-            this.props.setCurrentTask(this.props.currentTask === task ? null : task);
-        } else {
+            this.props.setCurrentTask(this.props.currentTask === this.task ? null : this.task);
+        } else if (!this.state.disabled) {
             this.props.changeZoomLevel(this.props.currentZoom + this.props.direction);
         }
     };
     updateZoom = (geom) => {
-        this.setState(() => ({zoomBox: geom.coordinates[0]}), () => {
-            if (this.props.direction > 0) {
-                this.props.zoomToExtent(this.state.zoomBox, this.props.mapCrs);
-            } else {
-                const bounds = this.state.zoomBox;
-                const center = [0.5 * (bounds[0] + bounds[2]), 0.5 * (bounds[1] + bounds[3])];
-                const zoom = Math.max(0, this.props.currentZoom + this.props.direction);
-                this.props.zoomToPoint(center, zoom, this.props.mapCrs);
-            }
-        });
+        const zoomBox = geom.coordinates[0];
+        if (this.props.direction > 0) {
+            this.props.zoomToExtent(zoomBox, this.props.mapCrs);
+        } else {
+            const center = [0.5 * (zoomBox[0] + zoomBox[2]), 0.5 * (zoomBox[1] + zoomBox[3])];
+            const zoom = Math.max(0, this.props.currentZoom + this.props.direction);
+            this.props.zoomToPoint(center, zoom, this.props.mapCrs);
+        }
     };
 }
 
