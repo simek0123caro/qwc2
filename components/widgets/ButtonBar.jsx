@@ -29,6 +29,7 @@ class ButtonBar extends React.Component {
             disabled: PropTypes.bool
         })),
         disabled: PropTypes.bool,
+        forceLabel: PropTypes.bool,
         mobile: PropTypes.bool,
         onClick: PropTypes.func,
         tooltipPos: PropTypes.string
@@ -53,7 +54,7 @@ class ButtonBar extends React.Component {
                                 type={button.type || "button"}
                             >
                                 {button.icon ? (<Icon icon={button.icon} />) : null}
-                                {button.label && (!this.props.mobile || !button.icon) ? (<span>{LocaleUtils.tr(button.label)}</span>) : null}
+                                {button.label && (!this.props.mobile || !button.icon || this.props.forceLabel) ? (<span>{LocaleUtils.tr(button.label)}</span>) : null}
                             </button>
                             {button.tooltip ? (<span className={"buttonbar-button-tooltip " + ("buttonbar-button-tooltip-" + this.props.tooltipPos)}>
                                 {LocaleUtils.tr(button.tooltip)}
